@@ -2,3 +2,5 @@ auth.sh
 environment
 CVPR24-MedSAM-on-Laptop-main
 *.pyc
+*.csv
+*.log
