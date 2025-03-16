@@ -1,8 +1,8 @@
 import os
 import torch
 import argparse
-from models.mednext.nnunet_mednext import create_mednext_v1
-from models.mednext.nnunet_mednext.training.network_training.MedNeXt.nnUNetTrainerV2_MedNeXt import nnUNetTrainerV2_MedNeXt_L_kernel5
+from models.MedNeXt.nnunet_mednext import create_mednext_v1
+from models.MedNeXt.nnunet_mednext.training.network_training.MedNeXt.nnUNetTrainerV2_MedNeXt import nnUNetTrainerV2_MedNeXt_L_kernel5
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

@@ -5,3 +5,4 @@ CVPR24-MedSAM-on-Laptop-main
 *.csv
 *.log
 .env
+data/raw/*
