@@ -3,7 +3,7 @@ import os
 from logging_config import logger
 import pandas as pd
 
-def init_data(training_cache: str, validation_cache: str):
+def init_data():
     """
     Requires Data to be included into the download cart in Synapse.
     """

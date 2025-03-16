@@ -6,7 +6,8 @@ Step x:
 get_data.py
 This script loads the data into the synapse cache
 
-training_cache_filedir = '188/141876188/BraTS-MEN-RT-Train-v2'
-validation_cache_filedir = '485/143840485/BraTS-MEN-RT-Val-v1'
+Step x:
+preprocess the data into the needed form for MedNeXt model
 
-python training.py -traindir '188/141876188/BraTS-MEN-RT-Train-v2' -valdir '485/143840485/BraTS-MEN-RT-Val-v1'
+Step x:
+training
