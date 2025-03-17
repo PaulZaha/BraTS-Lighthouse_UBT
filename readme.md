@@ -13,4 +13,4 @@ Step x:
 preprocess the data into the needed form for MedNeXt model
 
 Step x:
-training
+python training.py --images_dir /mnt/Z/Repositories/BraTS-Lighthouse_UBT/data/nnUNet_raw_data_base/imagesTr --masks_dir /mnt/Z/Repositories/BraTS-Lighthouse_UBT/data/nnUNet_raw_data_base/labelsTr
