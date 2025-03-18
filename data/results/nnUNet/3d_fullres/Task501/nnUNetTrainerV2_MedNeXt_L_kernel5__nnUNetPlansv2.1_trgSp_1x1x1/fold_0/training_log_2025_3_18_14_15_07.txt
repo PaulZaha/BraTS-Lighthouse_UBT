@@ -1,19 +1,18 @@
 Starting... 
-2025-03-18 12:49:32.325695: Using splits from existing split file: /mnt/Z/Repositories/BraTS/BraTS-Lighthouse_UBT/data/preprocessed/Task501/splits_final.pkl 
-2025-03-18 12:49:32.325939: The split file contains 5 splits. 
-2025-03-18 12:49:32.325993: Desired fold for training: 0 
-2025-03-18 12:49:32.326071: This split has 7 training and 2 validation cases. 
-2025-03-18 12:49:32.391105: TRAINING KEYS:
+2025-03-18 14:15:07.059627: Creating new 5-fold cross-validation split... 
+2025-03-18 14:15:07.060353: Desired fold for training: 0 
+2025-03-18 14:15:07.060421: This split has 7 training and 2 validation cases. 
+2025-03-18 14:15:07.820587: TRAINING KEYS:
  odict_keys([np.str_('BRATS_0015'), np.str_('BRATS_0017'), np.str_('BRATS_0029'), np.str_('BRATS_0030'), np.str_('BRATS_0041'), np.str_('BRATS_0044'), np.str_('BRATS_0048')]) 
-2025-03-18 12:49:32.391199: VALIDATION KEYS:
+2025-03-18 14:15:07.820741: VALIDATION KEYS:
  odict_keys([np.str_('BRATS_0004'), np.str_('BRATS_0028')]) 
-2025-03-18 12:49:33.438214: lr: 0.001 
-2025-03-18 12:49:38.076675: Unable to plot network architecture: 
-2025-03-18 12:49:38.076844: No module named 'hiddenlayer' 
-2025-03-18 12:49:38.076901: 
+2025-03-18 14:15:08.908542: lr: 0.001 
+2025-03-18 14:15:14.767947: Unable to plot network architecture: 
+2025-03-18 14:15:14.768093: No module named 'hiddenlayer' 
+2025-03-18 14:15:14.768153: 
 printing the network instead:
  
-2025-03-18 12:49:38.076946: MedNeXt(
+2025-03-18 14:15:14.768208: MedNeXt(
   (stem): Conv3d(1, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
   (enc_block_0): Sequential(
     (0): MedNeXtBlock(
@@ -491,7 +490,7 @@ printing the network instead:
     (conv_out): ConvTranspose3d(512, 2, kernel_size=(1, 1, 1), stride=(1, 1, 1))
   )
 ) 
-2025-03-18 12:49:38.170740: 
+2025-03-18 14:15:14.826222: 
  
-2025-03-18 12:49:38.174419: 
+2025-03-18 14:15:14.826643: 
 epoch:  0 

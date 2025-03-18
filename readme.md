@@ -29,4 +29,4 @@ mednextv1_train 3d_fullres nnUNetTrainerV2_MedNeXt_S_kernel3 Task501 0 -p nnUNet
 mednextv1_train 3d_fullres nnUNetTrainerV2_MedNeXt_S_kernel3 Task501 0 (for testing with only 10 images)
 
 this worked?
-mednextv1_train 3d_fullres nnUNetTrainerV2_MedNeXt_L_kernel5 Task501 0 -p nnUNetPlansv2.1_trgSp_1x1x1
+mednextv1_train 3d_fullres nnUNetTrainerV2_MedNeXt_M_kernel5 Task501 0 -p nnUNetPlansv2.1_trgSp_1x1x1
