@@ -1,5 +1,6 @@
 auth.sh
-environment
+environment_MedNeXt
+environment_EfficientVit-SAM
 CVPR24-MedSAM-on-Laptop-main
 *.pyc
 *.csv
