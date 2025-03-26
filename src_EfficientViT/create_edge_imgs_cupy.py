@@ -56,10 +56,11 @@ def process_folder_parallel(input_folder, output_folder, num_workers=4):
                 output_dir = os.path.join(output_folder, relative_path)
                 output_filepath = os.path.join(output_dir, file)
                 tasks.append((input_filepath, output_filepath))
-    print(tasks)
-    with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        # Verwende die Wrapper-Funktion anstelle eines Lambdas.
-        executor.map(process_file_gpu_wrapper, tasks)
+                process_file_gpu(input_filepath,output_filepath)
+    # print(tasks)
+    # with ProcessPoolExecutor(max_workers=num_workers) as executor:
+    #     # Verwende die Wrapper-Funktion anstelle eines Lambdas.
+    #     executor.map(process_file_gpu_wrapper, tasks)
 
 if __name__ == "__main__":
     input_folder = "/mnt/Z/Repositories/BraTS/BraTS-Lighthouse_UBT/src_EfficientViT/data/structured_data"
