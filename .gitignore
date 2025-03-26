@@ -1,7 +1,9 @@
-auth.sh
 environment_MedNeXt
-environment_EfficientVit-SAM
-CVPR24-MedSAM-on-Laptop-main
+environment_EfficientVit
+src_EfficientViT/data
+src_EfficientViT/efficientvit_sam_l0_checkpoint.pt
+src_DAFT
+data
 *.pyc
 *.csv
 *.log
@@ -10,3 +12,4 @@ CVPR24-MedSAM-on-Laptop-main
 *.pkl
 *.npz
 *.npy
+*.pth
