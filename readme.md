@@ -15,6 +15,8 @@ rename it to efficientvit_sam_l0_checkpoint.pt and put into src_EfficientViT Fol
 Data Strucruing:
 python structure_BraTS_data.py
 
+python create_edge_imgs.py
+
 python create_dataset.py
 
 
