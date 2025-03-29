@@ -19,9 +19,6 @@ from efficientvit.sam_model_zoo import create_efficientvit_sam_model
 import cv2
 import torch.nn.functional as F
 
-from segment_anything.modeling import MaskDecoder, PromptEncoder, TwoWayTransformer
-from tiny_vit_sam import TinyViT
-
 
 import pandas as pd
 
@@ -31,23 +28,23 @@ import argparse
 # %%
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--traincsv", type=str, default="data/dataset_csvs/train.csv",
+    "--traincsv", type=str, default="datasplit/train.csv",
     help="csv file containing all files in the training set"
 )
 parser.add_argument(
-    "--valcsv", type=str, default="data/dataset_csvs/val.csv",
+    "--valcsv", type=str, default="datasplit/val.csv",
     help="csv file containing all files in the validation set"
 )
 parser.add_argument(
-    "-pretrained_checkpoint", type=str, default="efficientvit_sam_l0_checkpoint.pt",
+    "-pretrained_checkpoint", type=str, default="lite_medsam.pth",
     help="Path to the pretrained Lite-MedSAM checkpoint."
 )
 parser.add_argument(
-    "-resume", type=str, default='',
+    "-resume", type=str, default='work_dir_evit/base/medsam_lite_latest.pth',
     help="Path to the checkpoint to continue training."
 )
 parser.add_argument(
-    "-work_dir", type=str, default="./workdir",
+    "-work_dir", type=str, default="work_dir_evit/base",
     help="Path to the working directory where checkpoints and logs will be saved."
 )
 parser.add_argument(
@@ -98,10 +95,6 @@ parser.add_argument(
     "--sanity_check", action="store_true",
     help="Whether to do sanity check for dataloading."
 )
-parser.add_argument(
-    "--nopretrain", action="store_true",
-    help="Provide if no pretrained checkpoint should be used"
-)
 
 args = parser.parse_args()
 # %%
@@ -121,10 +114,10 @@ do_sancheck = args.sanity_check
 checkpoint = args.resume
 traincsv = args.traincsv
 valcsv = args.valcsv
-nopretrain = args.nopretrain
 patience = args.patience
 
 makedirs(work_dir, exist_ok=True)
+
 
 # %%
 torch.cuda.empty_cache()
@@ -267,121 +260,26 @@ class NpzDataset(Dataset):
 
         return image_padded
 
-
-if nopretrain:
-    medsam_lite_model = create_efficientvit_sam_model("efficientvit-sam-l0", False)
-else:
-    medsam_lite_model = create_efficientvit_sam_model("efficientvit-sam-l0", True, medsam_lite_checkpoint)
-medsam_lite_model = medsam_lite_model.image_encoder
+medsam_lite_model = create_efficientvit_sam_model("efficientvit-sam-l0", False)
+medsam_lite_model.prompt_encoder.input_image_size=(256,256)
 medsam_lite_model.to(device)
 medsam_lite_model.eval()
 
-class MedSAM_Lite(nn.Module):
-    def __init__(self,
-                image_encoder,
-                mask_decoder,
-                prompt_encoder
-                ):
-        super().__init__()
-        self.image_encoder = image_encoder
-        self.mask_decoder = mask_decoder
-        self.prompt_encoder = prompt_encoder
-
-    def forward(self, image, boxes):
-        image_embedding = self.image_encoder(image) # (B, 256, 64, 64)
-
-        sparse_embeddings, dense_embeddings = self.prompt_encoder(
-            points=None,
-            boxes=boxes,
-            masks=None,
+if medsam_lite_checkpoint is not None:
+    if isfile(medsam_lite_checkpoint):
+        print(f"Finetuning with pretrained weights {medsam_lite_checkpoint}")
+        medsam_lite_ckpt = torch.load(
+            medsam_lite_checkpoint,
+            map_location="cpu",
+            weights_only=False
         )
-        low_res_masks, iou_predictions = self.mask_decoder(
-            image_embeddings=image_embedding, # (B, 256, 64, 64)
-            image_pe=self.prompt_encoder.get_dense_pe(), # (1, 256, 64, 64)
-            sparse_prompt_embeddings=sparse_embeddings, # (B, 2, 256)
-            dense_prompt_embeddings=dense_embeddings, # (B, 256, 64, 64)
-            multimask_output=False,
-          ) # (B, 1, 256, 256)
-
-        return low_res_masks, iou_predictions
-
-    @torch.no_grad()
-    def postprocess_masks(self, masks, new_size, original_size):
-        """
-        Do cropping and resizing
-        """
-        # Crop
-        masks = masks[:, :, :new_size[0], :new_size[1]]
-        # Resize
-        masks = F.interpolate(
-            masks,
-            size=(original_size[0], original_size[1]),
-            mode="bilinear",
-            align_corners=False,
-        )
-
-        return masks
-
-# %%
-medsam_lite_image_encoder = TinyViT(
-    img_size=256,
-    in_chans=3,
-    embed_dims=[
-        64, ## (64, 256, 256)
-        128, ## (128, 128, 128)
-        160, ## (160, 64, 64)
-        320 ## (320, 64, 64)
-    ],
-    depths=[2, 2, 6, 2],
-    num_heads=[2, 4, 5, 10],
-    window_sizes=[7, 7, 14, 7],
-    mlp_ratio=4.,
-    drop_rate=0.,
-    drop_path_rate=0.0,
-    use_checkpoint=False,
-    mbconv_expand_ratio=4.0,
-    local_conv_size=3,
-    layer_lr_decay=0.8
-)
-
-medsam_lite_prompt_encoder = PromptEncoder(
-    embed_dim=256,
-    image_embedding_size=(64, 64),
-    input_image_size=(256, 256),
-    mask_in_chans=16
-)
-
-medsam_lite_mask_decoder = MaskDecoder(
-    num_multimask_outputs=3,
-        transformer=TwoWayTransformer(
-            depth=2,
-            embedding_dim=256,
-            mlp_dim=2048,
-            num_heads=8,
-        ),
-        transformer_dim=256,
-        iou_head_depth=3,
-        iou_head_hidden_dim=256,
-)
-
-medsam_model = MedSAM_Lite(
-    image_encoder = medsam_lite_image_encoder,
-    mask_decoder = medsam_lite_mask_decoder,
-    prompt_encoder = medsam_lite_prompt_encoder
-)
-
-lite_medsam_checkpoint = torch.load("work_dir/LiteMedSAM/lite_medsam.pth", map_location='cpu')
-medsam_model.load_state_dict(lite_medsam_checkpoint)
-
-medsam_model = medsam_model.image_encoder
+        medsam_lite_model.load_state_dict(medsam_lite_ckpt, strict=True)
+    else:
+        print(f"Pretained weights {medsam_lite_checkpoint} not found, training from scratch")
 
 medsam_lite_model = nn.DataParallel(medsam_lite_model)
 medsam_lite_model = medsam_lite_model.to(device)
 medsam_lite_model.train()
-
-medsam_model = nn.DataParallel(medsam_model)
-medsam_model = medsam_model.to(device)
-medsam_model.eval()
 
 # %%
 print(f"MedSAM Lite size: {sum(p.numel() for p in medsam_lite_model.parameters())}")
@@ -400,6 +298,8 @@ lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
     patience=5,
     cooldown=0
 )
+seg_loss = monai.losses.DiceLoss(sigmoid=True, squared_pred=True, reduction='mean')
+ce_loss = nn.BCEWithLogitsLoss(reduction='mean')
 iou_loss = nn.MSELoss(reduction='mean')
 # %%
 train_dataset = NpzDataset(filescsv=traincsv, data_aug=True)
@@ -418,13 +318,13 @@ if checkpoint and isfile(checkpoint):
     start_epoch = checkpoint["epoch"]
     best_loss = checkpoint["best_loss"]
     epochs_since_improvement = checkpoint["epochs_since_improvement"]
-    
+
     random.setstate(checkpoint["rng_state"])
     np.random.set_state(checkpoint["np_rng_state"])
     torch.set_rng_state(checkpoint["torch_rng_state"])
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(checkpoint["torch_cuda_rng_state"])
-        
+    
     print(f"Loaded checkpoint from epoch {start_epoch}")
 else:
     start_epoch = 0
@@ -435,8 +335,11 @@ else:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
-
+    
 # %%
+for parameter in medsam_lite_model.module.prompt_encoder.parameters():
+    parameter.requires_grad = False
+
 train_losses = []
 for epoch in range(start_epoch + 1, num_epochs+1):
     if epochs_since_improvement > patience:
@@ -453,11 +356,31 @@ for epoch in range(start_epoch + 1, num_epochs+1):
         optimizer.zero_grad()
         image, gt2D, boxes = image.to(device), gt2D.to(device), boxes.to(device)
 
-        image_embedding = medsam_lite_model.module(image) # (B, 256, 64, 64)
-        with torch.no_grad():
-            image_embedding_medsam = medsam_model.module(image) # (B, 256, 64, 64)
-        loss = iou_loss(image_embedding, image_embedding_medsam)
+        image_embedding = medsam_lite_model.module.image_encoder(image) # (B, 256, 64, 64)
 
+        sparse_embeddings, dense_embeddings = medsam_lite_model.module.prompt_encoder(
+            points=None,
+            boxes=boxes,
+            masks=None,
+        )
+        logits_pred, iou_pred = medsam_lite_model.module.mask_decoder(
+            image_embeddings=image_embedding, # (B, 256, 64, 64)
+            image_pe=medsam_lite_model.module.prompt_encoder.get_dense_pe(), # (1, 256, 64, 64)
+            sparse_prompt_embeddings=sparse_embeddings, # (B, 2, 256)
+            dense_prompt_embeddings=dense_embeddings, # (B, 256, 64, 64)
+            multimask_output=False,
+        ) # (B, 1, 256, 256)
+        #print(logits_pred.shape)
+
+        #logits_pred, iou_pred = medsam_lite_model(image, boxes)
+        l_seg = seg_loss(logits_pred, gt2D)
+        l_ce = ce_loss(logits_pred, gt2D.float())
+        #mask_loss = l_seg + l_ce
+        mask_loss = seg_loss_weight * l_seg + ce_loss_weight * l_ce
+        iou_gt = cal_iou(torch.sigmoid(logits_pred) > 0.5, gt2D.bool())
+        l_iou = iou_loss(iou_pred, iou_gt)
+        #loss = mask_loss + l_iou
+        loss = mask_loss + iou_loss_weight * l_iou
         epoch_loss[step] = loss.item()
         loss.backward()
         optimizer.step()
@@ -474,7 +397,7 @@ for epoch in range(start_epoch + 1, num_epochs+1):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
-    
+
     val_loss = 0
     medsam_lite_model.eval()
     with torch.no_grad():
@@ -483,9 +406,25 @@ for epoch in range(start_epoch + 1, num_epochs+1):
             gt2D = batch["gt2D"]
             boxes = batch["bboxes"]
             image, gt2D, boxes = image.to(device), gt2D.to(device), boxes.to(device)
-            image_embedding = medsam_lite_model.module(image) # (B, 256, 64, 64)
-            image_embedding_medsam = medsam_model.module(image) # (B, 256, 64, 64)
-            loss = iou_loss(image_embedding, image_embedding_medsam)
+            image_embedding = medsam_lite_model.module.image_encoder(image) # (B, 256, 64, 64)
+            sparse_embeddings, dense_embeddings = medsam_lite_model.module.prompt_encoder(
+                points=None,
+                boxes=boxes,
+                masks=None,
+            )
+            logits_pred, iou_pred = medsam_lite_model.module.mask_decoder(
+                image_embeddings=image_embedding, # (B, 256, 64, 64)
+                image_pe=medsam_lite_model.module.prompt_encoder.get_dense_pe(), # (1, 256, 64, 64)
+                sparse_prompt_embeddings=sparse_embeddings, # (B, 2, 256)
+                dense_prompt_embeddings=dense_embeddings, # (B, 256, 64, 64)
+                multimask_output=False,
+            )
+            l_seg = seg_loss(logits_pred, gt2D)
+            l_ce = ce_loss(logits_pred, gt2D.float())
+            mask_loss = seg_loss_weight * l_seg + ce_loss_weight * l_ce
+            iou_gt = cal_iou(torch.sigmoid(logits_pred) > 0.5, gt2D.bool())
+            l_iou = iou_loss(iou_pred, iou_gt)
+            loss = mask_loss + iou_loss_weight * l_iou
             val_loss += loss.item()
     print(val_loss)
     # continue with old random states for training, to make sure that different boxes and slices of the same datapoint get selected
@@ -516,7 +455,7 @@ for epoch in range(start_epoch + 1, num_epochs+1):
         checkpoint["torch_cuda_rng_state"] = torch.cuda.get_rng_state()
     torch.save(checkpoint, join(work_dir, "medsam_lite_latest.pth"))
     if val_loss < best_loss:
-        print(f"New best loss in epoch {epoch}: {best_loss:.4f} -> {val_loss:.4f}")
+        print(f"New best loss in epoch {epoch}: {best_loss:.5f} -> {val_loss:.5f}")
         best_loss = val_loss
         checkpoint["best_loss"] = best_loss
         torch.save(checkpoint, join(work_dir, "medsam_lite_best.pth"))

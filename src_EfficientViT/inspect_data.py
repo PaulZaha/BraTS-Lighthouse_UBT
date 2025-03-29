@@ -25,7 +25,7 @@ def inspect_npz(file):
     data = np.load(file)
     
     imgs = data['imgs']
-    
+    print(imgs.shape)
     slices = np.linspace(0, imgs.shape[0]-1, 10, dtype=int)
     
     fig, ax = plt.subplots(1, len(slices), figsize=(20, 4))
@@ -49,7 +49,7 @@ def main():
     
     #inspect_nii('/mnt/Z/Repositories/BraTS/BraTS-Lighthouse_UBT/src_EfficientViT/data/raw_data_BraTS/BraTS-MEN-RT-Train-v2/BraTS-MEN-RT-0004-1/BraTS-MEN-RT-0004-1_t1c.nii.gz')
     
-    inspect_npz('/mnt/Z/Repositories/BraTS/BraTS-Lighthouse_UBT/src_EfficientViT/data/structured_data/BraTS/BraTS-MEN-RT-0185-1.npz')
+    inspect_npz('/mnt/Z/Repositories/BraTS/BraTS-Lighthouse_UBT/src_EfficientViT/data/structured_data_kirsch/BraTS/BraTS-MEN-RT-0398-1.npz')
 
 if __name__ == '__main__':
     main()

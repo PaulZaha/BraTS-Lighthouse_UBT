@@ -20,5 +20,19 @@ python create_edge_imgs.py
 python create_dataset.py
 
 
-python distill.py -num_epochs 70 -batch_size 7 -device cuda -work_dir work_dir_distill/ -resume work_dir_distill/medsam_lite_latest.pth -pretrained_checkpoint efficientvit_sam_l0_checkpoint.pt
+Run for raw data:
+python distill.py -num_epochs 70 -batch_size 7 -device cuda -work_dir work_dir_distill/ -resume work_dir_distill/medsam_lite_latest.pth -pretrained_checkpoint efficientvit_sam_l0_checkpoint.pt --traincsv data/dataset_csvs/train.csv --valcsv data/dataset_csvs/val.csv
+
+python modelmerge.py work_dir_distill/medsam_lite_best.pth distilled.pth
+
+python finetune.py -pretrained_checkpoint distilled.pth -num_epochs 70 -batch_size 1 -device cuda -work_dir work_dir_general -resume work_dir_general/medsam_lite_latest.pth --traincsv data/dataset_csvs/train.csv --valcsv data/dataset_csvs/val.csv
+
+
+
+
+Run for kirsch data:
 python distill.py -num_epochs 70 -batch_size 7 -device cuda -work_dir work_dir_distill_kirsch/ -resume work_dir_distill_kirsch/medsam_lite_latest.pth -pretrained_checkpoint efficientvit_sam_l0_checkpoint.pt --traincsv data/dataset_csvs/train_kirsch.csv --valcsv data/dataset_csvs/val_kirsch.csv
+
+python modelmerge.py work_dir_distill/medsam_lite_best.pth distilled_kirsch.pth
+
+python finetune.py -pretrained_checkpoint distilled_kirsch.pth -num_epochs 70 -batch_size 1 -device cuda -work_dir work_dir_general_kirsch -resume work_dir_general_kirsch/medsam_lite_latest.pth --traincsv data/dataset_csvs/train_kirsch.csv --valcsv data/dataset_csvs/val_kirsch.csv

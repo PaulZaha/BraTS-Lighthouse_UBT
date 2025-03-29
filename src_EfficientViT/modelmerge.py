@@ -96,21 +96,21 @@ medsam_lite_model = MedSAM_Lite(
     prompt_encoder = medsam_lite_prompt_encoder
 )
 
-a=torch.load("work_dir/LiteMedSAM/lite_medsam.pth", map_location=torch.device('cpu'))
+a=torch.load("work_dir/LiteMedSAM/lite_medsam.pth", map_location=torch.device('cpu'),weights_only=False)
 medsam_lite_model.load_state_dict(a)
 torch.save(medsam_lite_model.prompt_encoder.state_dict(), "pe.pth")
 torch.save(medsam_lite_model.mask_decoder.state_dict(), "md.pth")
 
-from efficientvit.sam_model_zoo import create_sam_model
-medsam_lite_model = create_sam_model("l0", False)
+from efficientvit.sam_model_zoo import create_efficientvit_sam_model
+medsam_lite_model = create_efficientvit_sam_model("efficientvit-sam-l0", False)
 
 medsam_lite_model = medsam_lite_model.image_encoder
 medsam_lite_model = nn.DataParallel(medsam_lite_model)
-a=torch.load(args.checkpoint, map_location=torch.device('cpu'))["model"]
+a=torch.load(args.checkpoint, map_location=torch.device('cpu'),weights_only=False)["model"]
 medsam_lite_model.load_state_dict(a)
 torch.save(medsam_lite_model.module.state_dict(), "ie.pth")
 
-medsam_lite_model = create_sam_model("l0", False)
+medsam_lite_model = create_efficientvit_sam_model("efficientvit-sam-l0", False)
 medsam_lite_model.image_encoder.load_state_dict(torch.load("ie.pth", map_location=torch.device('cpu')))
 medsam_lite_model.prompt_encoder.load_state_dict(torch.load("pe.pth", map_location=torch.device('cpu')))
 medsam_lite_model.mask_decoder.load_state_dict(torch.load("md.pth", map_location=torch.device('cpu')))
