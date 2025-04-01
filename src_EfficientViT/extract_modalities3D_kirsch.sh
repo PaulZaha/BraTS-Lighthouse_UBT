@@ -1,0 +1,2 @@
+python extract_evit.py work_dir_modalities3D_kirsch/CT/medsam_lite_best.pth models_kirsch/CT.pth
+python extract_evit.py work_dir_modalities3D_kirsch/BraTS/medsam_lite_best.pth models_kirsch/BraTS.pth
